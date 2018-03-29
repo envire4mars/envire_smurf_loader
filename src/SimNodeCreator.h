@@ -59,9 +59,13 @@
 #include <mars/utils/misc.h>
 #include <mars/utils/mathUtils.h>
 
+#include <mars/envire_managers/EnvireStorageManager.hpp>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
+
+        using namespace mars::plugins::envire_managers;
 
         template <class ItemDataType>
         class SimNodeCreator 
@@ -85,12 +89,12 @@ namespace mars {
 
             void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
             {
-                envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<ItemDataType>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = control->graph->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimNodeCreator::create] No " + type_name + " was found").c_str());
@@ -146,7 +150,7 @@ namespace mars {
                     using SimNodeItem =  envire::core::Item<std::shared_ptr<mars::sim::SimNode>>;
 
                     SimNodeItemPtr simNodeItem( new SimNodeItem(simNodePtr));        
-                    control->graph->addItemToFrame(frame_id, simNodeItem);
+                    EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, simNodeItem);
 
                     simNodeItem->getData()->getInterface();
 #ifdef DEBUG
@@ -171,7 +175,7 @@ namespace mars {
                 }
                 else
                 {
-                    fromOrigin = control->graph->getTransform(origin_frame_id, frame_id); 
+                    fromOrigin = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, frame_id); 
                 }
                 node_data.pos = fromOrigin.transform.translation;
                 node_data.rot = fromOrigin.transform.orientation;

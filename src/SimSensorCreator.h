@@ -56,9 +56,13 @@
 
 #include <configmaps/ConfigData.h>
 
+#incldue <mars/envire_managers/EnvireStorageManager.hpp>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
+
+        using namespace mars::plugins::envire_managers;
 
         class SimSensorCreator 
         {
@@ -74,12 +78,12 @@ namespace mars {
 
             void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
             {
-                envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<smurf::Sensor>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = control->graph->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimSensorCreator::create] No " + type_name + " was found").c_str());
@@ -102,7 +106,7 @@ namespace mars {
                         std::shared_ptr<mars::interfaces::BaseSensor> sensor(createSensor(item_data, frame_id));
 
                         SensorItemPtr sensorItem(new envire::core::Item<std::shared_ptr<mars::interfaces::BaseSensor>>(sensor));
-                        control->graph->addItemToFrame(frame_id, sensorItem);
+                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, sensorItem);
                         
 #ifdef DEBUG
                         LOG_DEBUG("[SimSensorCreator::create] Base sensor instantiated and added to the graph.");
@@ -125,7 +129,7 @@ namespace mars {
                         std::shared_ptr<mars::interfaces::BaseSensor> sensor(createSensor(item_data, frame_id));
 
                         SensorItemPtr sensorItem(new envire::core::Item<std::shared_ptr<mars::interfaces::BaseSensor>>(sensor));
-                        control->graph->addItemToFrame(frame_id, sensorItem);
+                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, sensorItem);
 
 #ifdef DEBUG
                         LOG_DEBUG("[SimSensorCreator::create] Base sensor instantiated and added to the graph.");
@@ -169,7 +173,7 @@ namespace mars {
                 bool attached = false;
                 std::shared_ptr<mars::sim::SimNode> simNodePtr;
                 Iterator begin, end;
-                boost::tie(begin, end) = control->graph->getItems<SimNodeItem>(frameId);
+                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<SimNodeItem>(frameId);
                 if (begin != end)
                 {
                     simNodePtr = begin->getData();

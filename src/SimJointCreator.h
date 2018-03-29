@@ -54,9 +54,13 @@
 
 #include <smurf/Robot.hpp>
 
+#include <mars/envire_managers/EnvireStorageManager.hpp>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
+
+        using namespace mars::plugins::envire_managers;
 
         template <class ItemDataType>
         class SimJointCreator
@@ -78,9 +82,9 @@ namespace mars {
 
             void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
             {
-                envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
 
-                const std::pair<ItemItr, ItemItr> pair = control->graph->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimJointCreator::create] No " + type_name + " was found").c_str());
@@ -103,7 +107,7 @@ namespace mars {
 
             void setAnchor(const ItemDataType &item_data, mars::interfaces::JointData &jointData){
                 envire::core::FrameId target_frame_id = item_data.getTargetFrame().getName();
-                envire::core::Transform target_transf = control->graph->getTransform(origin_frame_id, target_frame_id); 
+                envire::core::Transform target_transf = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, target_frame_id); 
                 utils::Vector anchor = target_transf.transform.translation;
                 jointData.anchor = anchor;
                 jointData.anchorPos = mars::interfaces::ANCHOR_NODE2;
@@ -136,7 +140,7 @@ namespace mars {
                 using Iterator = envire::core::EnvireGraph::ItemIterator<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>;
                 Iterator begin, end;
 
-                boost::tie(begin, end) = control->graph->getItems<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>(frame_name);
+                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>(frame_name);
                 if (begin != end){
                     return begin->getData().get();
                 }
@@ -187,7 +191,7 @@ namespace mars {
                         envire::core::FrameId storage_frame_id = item_data.getSourceFrame().getName();
 
                         SimJointPtrItemPtr simJointPtrItemPtr(new envire::core::Item<std::shared_ptr<mars::sim::SimJoint>>(simJoint));
-                        control->graph->addItemToFrame(storage_frame_id, simJointPtrItemPtr);            
+                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(storage_frame_id, simJointPtrItemPtr);            
 
     #ifdef DEBUG
                         LOG_DEBUG("[SimJointCreator::createSimJoint] SimJoint  ***" + joint_data.name + "*** is created");
@@ -208,7 +212,7 @@ namespace mars {
                 RecordIterator begin, end;
                 // TODO Ask Arne, why to getItems I have to provide the template Item?
                 // won't getItems only look for Items?
-                boost::tie(begin, end) = control->graph->getItems<envire::core::Item<mars::sim::JointRecord>>(frameId);
+                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<envire::core::Item<mars::sim::JointRecord>>(frameId);
                 bool stored=false;
                 while((!stored)&&(begin!=end))
                 {
@@ -246,7 +250,7 @@ namespace mars {
                 mars::sim::JointRecord* joint_info(new mars::sim::JointRecord);
                 joint_info->name = joint.getName();
                 envire::core::Item<mars::sim::JointRecord>::Ptr jointItemPtr(new envire::core::Item<mars::sim::JointRecord>(*joint_info));
-                control->graph->addItemToFrame(frame_id, jointItemPtr);                   
+                EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, jointItemPtr);                   
 
 #ifdef DEBUG
                 LOG_DEBUG(("[EnvireSmurfLoader::createInternal] The JointRecord is created for ***" + joint.getName() + "***").c_str());
@@ -259,7 +263,7 @@ namespace mars {
                 // set Axis 1
                 envire::core::FrameId target_frame_id = joint.getTargetFrame().getName();
                 // get transformation from source to target
-                envire::core::Transform target_transf = control->graph->getTransform(origin_frame_id, target_frame_id); 
+                envire::core::Transform target_transf = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, target_frame_id); 
                 Eigen::Affine3d axis_transf = target_transf.transform.orientation * joint.getSourceToAxis().inverse();
                 joint_data.axis1 = axis_transf.translation();
 

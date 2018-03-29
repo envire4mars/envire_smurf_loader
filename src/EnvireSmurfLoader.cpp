@@ -48,6 +48,7 @@
 #include <base/Time.hpp>
 #include <envire_core/graph/EnvireGraph.hpp>
 
+#include <mars/envire_managers/EnvireStorageManager.hpp>
 
 #include "SimNodeCreator.h"
 #include "SimJointCreator.h"
@@ -61,8 +62,7 @@ namespace mars {
     namespace plugins {
         namespace EnvireSmurfLoader {
             
-            using namespace mars::utils;
-            using namespace mars::interfaces;
+            using namespace mars::plugins::envire_managers;
             
             EnvireSmurfLoader::EnvireSmurfLoader(lib_manager::LibManager *theManager)
                 : LoadSceneInterface(theManager), control(NULL), nextGroupId(1)
@@ -99,7 +99,7 @@ namespace mars {
                                     std::string robotname)
             {
                 std::cout << "smurf loader zero position" << std::endl;
-                vertex_descriptor center = control->graph->getVertex(SIM_CENTER_FRAME_NAME);
+                vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 iniPose.transform.orientation = base::Quaterniond::Identity();
                 iniPose.transform.translation << 0.0, 0.0, 0.3;
@@ -113,7 +113,7 @@ namespace mars {
             {
                 LOG_DEBUG("[EnvireSmurfLoader::loadFile] Smurf loader given position");
                 std::string suffix = utils::getFilenameSuffix(filename);
-                vertex_descriptor center = control->graph->getVertex(SIM_CENTER_FRAME_NAME);
+                vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 // FIXME TODO use rot input. Is it Euler angles or scaled axis?
                 iniPose.transform.orientation = base::Quaterniond::Identity();
@@ -135,22 +135,22 @@ namespace mars {
                 LOG_DEBUG("Robot Path: %s",  path.c_str() );
                 smurf::Robot* robot = new( smurf::Robot);
                 robot->loadFromSmurf(path);
-                envire::smurf::GraphLoader graphLoader(control->graph);
+                envire::smurf::GraphLoader graphLoader(EnvireStorageManager::instance()->getGraph());
                 graphLoader.loadRobot(nextGroupId, center, iniPose, *robot);
             }
             
             vertex_descriptor EnvireSmurfLoader::addCenter()
             {
                 center = SIM_CENTER_FRAME_NAME;
-                if (! control->graph->containsFrame(center))
-                    control->graph->addFrame(center);
-                return control->graph->getVertex(center);
+                if (! EnvireStorageManager::instance()->getGraph()->containsFrame(center))
+                    EnvireStorageManager::instance()->getGraph()->addFrame(center);
+                return EnvireStorageManager::instance()->getGraph()->getVertex(center);
             }
 
             void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
             {
-                NodeData data;
-                data.init("floorData", Vector(0,0,0));
+                mars::interfaces::NodeData data;
+                data.init("floorData", mars::utils::Vector(0,0,0));
                 data.initPrimitive(interfaces::NODE_TYPE_BOX, Vector(25, 25, 0.1), 0.0001);
                 data.movable = false;
                 mars::sim::PhysicsConfigMapItem::Ptr item(new mars::sim::PhysicsConfigMapItem);
@@ -160,7 +160,7 @@ namespace mars {
                 data.material.emissionFront = mars::utils::Color(1.0, 1.0, 1.0, 1.0);
                 LOG_DEBUG("Color of the Item in the addFloor: %f , %f, %f, %f", data.material.emissionFront.a , data.material.emissionFront.b, data.material.emissionFront.g, data.material.emissionFront.r );
                 data.toConfigMap(&(item.get()->getData()));
-                control->graph->addItemToFrame(control->graph->getFrameId(center), item);
+                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);
             }           
 
             void EnvireSmurfLoader::createSimObjects()
@@ -190,11 +190,11 @@ namespace mars {
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
-                boost::tie(v_itr, v_end) = control->graph->getVertices();
+                boost::tie(v_itr, v_end) = EnvireStorageManager::instance()->getGraph()->getVertices();
                 for(; v_itr != v_end; v_itr++)
                 {
 #ifdef DEBUG                    
-                    envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);
+                    envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
                     LOG_DEBUG(("[EnvireSmurfLoader::loadNodes] --- IN ***" + frame_id + "*** ---" ).c_str());
 
 #endif 
@@ -217,11 +217,11 @@ namespace mars {
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
-                boost::tie(v_itr, v_end) = control->graph->getVertices();
+                boost::tie(v_itr, v_end) = EnvireStorageManager::instance()->getGraph()->getVertices();
                 for(; v_itr != v_end; v_itr++)
                 {              
 #ifdef DEBUG          
-                    envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);                
+                    envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);                
                     LOG_DEBUG(("[EnvireSmurfLoader::loadJoints] --- IN ***" + frame_id + "*** ---" ).c_str());
 #endif 
                     //
@@ -240,11 +240,11 @@ namespace mars {
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
-                boost::tie(v_itr, v_end) = control->graph->getVertices();
+                boost::tie(v_itr, v_end) = EnvireStorageManager::instance()->getGraph()->getVertices();
                 for(; v_itr != v_end; v_itr++)
                 {              
 #ifdef DEBUG          
-                    envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);                
+                    envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);                
                     LOG_DEBUG(("[EnvireSmurfLoader::loadMotors] --- IN ***" + frame_id + "*** ---" ).c_str());
 #endif 
                     //
@@ -262,11 +262,11 @@ namespace mars {
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
-                boost::tie(v_itr, v_end) = control->graph->getVertices();
+                boost::tie(v_itr, v_end) = EnvireStorageManager::instance()->getGraph()->getVertices();
                 for(; v_itr != v_end; v_itr++)
                 {              
 #ifdef DEBUG          
-                    envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);                
+                    envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);                
                     LOG_DEBUG(("[EnvireSmurfLoader::loadSensors] --- IN ***" + frame_id + "*** ---" ).c_str());
 #endif 
                     //

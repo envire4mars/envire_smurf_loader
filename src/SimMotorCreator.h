@@ -54,9 +54,13 @@
 
 #include <configmaps/ConfigData.h>
 
+#include <mars/envire_managers/EnvireStorageManager.hpp>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
+
+        using namespace mars::plugins::envire_managers;
 
         class SimMotorCreator 
         {
@@ -72,12 +76,12 @@ namespace mars {
 
             void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
             {
-                envire::core::FrameId frame_id = control->graph->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<smurf::Motor>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = control->graph->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimMotorCreator::create] No " + type_name + " was found").c_str());

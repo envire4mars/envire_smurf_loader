@@ -17,6 +17,7 @@ pkg_check_modules(PKGCONFIG REQUIRED
           urdfdom
           mars_sim
           envire_smurf
+          envire_managers
           lib_config
           base-lib
 )
