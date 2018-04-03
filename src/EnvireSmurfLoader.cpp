@@ -108,7 +108,7 @@ namespace mars {
             }
 
             bool EnvireSmurfLoader::loadFile(std::string filename, std::string tmpPath,
-                                std::string robotname, utils::Vector pos, utils::Vector rot)
+                                std::string robotname, mars::utils::Vector pos, mars::utils::Vector rot)
             {
                 LOG_DEBUG("[EnvireSmurfLoader::loadFile] Smurf loader given position");
                 std::string suffix = utils::getFilenameSuffix(filename);
@@ -148,9 +148,10 @@ namespace mars {
 
             void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
             {
-                mars::interfaces::NodeData data;
+                printf("not implemented : %s\n", __PRETTY_FUNCTION__);
+                /*mars::interfaces::NodeData data;
                 data.init("floorData", mars::utils::Vector(0,0,0));
-                data.initPrimitive(interfaces::NODE_TYPE_BOX, Vector(25, 25, 0.1), 0.0001);
+                data.initPrimitive(interfaces::NODE_TYPE_BOX, mars::utils::Vector(25, 25, 0.1), 0.0001);
                 data.movable = false;
                 mars::sim::PhysicsConfigMapItem::Ptr item(new mars::sim::PhysicsConfigMapItem);
                 data.material.transparency = 0.5;
@@ -159,7 +160,7 @@ namespace mars {
                 data.material.emissionFront = mars::utils::Color(1.0, 1.0, 1.0, 1.0);
                 LOG_DEBUG("Color of the Item in the addFloor: %f , %f, %f, %f", data.material.emissionFront.a , data.material.emissionFront.b, data.material.emissionFront.g, data.material.emissionFront.r );
                 data.toConfigMap(&(item.get()->getData()));
-                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);
+                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);*/
             }           
 
             void EnvireSmurfLoader::createSimObjects()
