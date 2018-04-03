@@ -206,7 +206,7 @@ namespace mars {
                 }    
             }             
 
-            void addToJointRecord(const envire::core::FrameId &frameId, const std::string &jointName, mars::sim::SimJoint *simJoint)
+            /*void addToJointRecord(const envire::core::FrameId &frameId, const std::string &jointName, mars::sim::SimJoint *simJoint)
             {
                 using RecordIterator = envire::core::EnvireGraph::ItemIterator<envire::core::Item<mars::sim::JointRecord>>;
                 RecordIterator begin, end;
@@ -227,7 +227,7 @@ namespace mars {
                     begin ++;
                 }
 
-            }           
+            }*/           
         };
 
         class SimJointCreatorJoint: public SimJointCreator<smurf::Joint>
@@ -246,7 +246,7 @@ namespace mars {
             */
             virtual void createInternal(const smurf::Joint &joint, envire::core::FrameId frame_id)
             {
-                // create JOINT
+                /*// create JOINT
                 mars::sim::JointRecord* joint_info(new mars::sim::JointRecord);
                 joint_info->name = joint.getName();
                 envire::core::Item<mars::sim::JointRecord>::Ptr jointItemPtr(new envire::core::Item<mars::sim::JointRecord>(*joint_info));
@@ -254,7 +254,7 @@ namespace mars {
 
 #ifdef DEBUG
                 LOG_DEBUG(("[EnvireSmurfLoader::createInternal] The JointRecord is created for ***" + joint.getName() + "***").c_str());
-#endif                        
+#endif                  */      
 
                 // create Joint
                 mars::interfaces::JointData joint_data;
