@@ -42,19 +42,18 @@
 #include <envire_smurf/GraphLoader.hpp>
 
 // For the floor
-#include <mars/sim/ConfigMapItem.h>
+//#include <mars/sim/ConfigMapItem.h>
 
 // To log the graph
 #include <base/Time.hpp>
 #include <envire_core/graph/EnvireGraph.hpp>
 
-#include <mars/envire_managers/EnvireStorageManager.hpp>
+#include <mars/plugins/envire_managers/EnvireStorageManager.hpp>
 
 #include "SimNodeCreator.h"
 #include "SimJointCreator.h"
 #include "SimMotorCreator.h"
 #include "SimSensorCreator.h"
-#include "mars/sim/defines.hpp"
 
 using vertex_descriptor = envire::core::GraphTraits::vertex_descriptor;
 

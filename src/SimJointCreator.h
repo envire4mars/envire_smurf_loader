@@ -54,7 +54,7 @@
 
 #include <smurf/Robot.hpp>
 
-#include <mars/envire_managers/EnvireStorageManager.hpp>
+#include <mars/plugins/envire_managers/EnvireStorageManager.hpp>
 
 namespace mars {
   namespace plugins {

@@ -59,7 +59,7 @@
 #include <mars/utils/misc.h>
 #include <mars/utils/mathUtils.h>
 
-#include <mars/envire_managers/EnvireStorageManager.hpp>
+#include <mars/plugins/envire_managers/EnvireStorageManager.hpp>
 
 namespace mars {
   namespace plugins {
