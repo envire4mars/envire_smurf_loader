@@ -161,6 +161,9 @@ namespace mars {
             mars::interfaces::BaseSensor* createSensor(const smurf::Sensor &sensorSmurf, const envire::core::FrameId frameId)
             {
                 configmaps::ConfigMap sensorMap = sensorSmurf.getMap();
+                sensorMap["nodeID"] = control->nodes->getID((std::string) sensorMap["link"]);
+                // TODO_A: check if we can get jointID over graph back by using frameid
+                sensorMap["jointID"] = control->joints->getID(sensorSmurf.getJointName());
                 sensorMap["frame"] = frameId;
                 mars::interfaces::BaseSensor* sensor = control->sensors->createAndAddSensor(&sensorMap); 
                 return sensor;

@@ -97,7 +97,7 @@ namespace mars {
             bool EnvireSmurfLoader::loadFile(std::string filename, std::string tmpPath,
                                     std::string robotname)
             {
-                std::cout << "smurf loader zero position" << std::endl;
+                LOG_DEBUG("[EnvireSmurfLoader::loadFile] load smurf to zero position");
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 iniPose.transform.orientation = base::Quaterniond::Identity();
@@ -182,7 +182,6 @@ namespace mars {
 #ifdef DEBUG
                 LOG_DEBUG("[EnvireSmurfLoader::loadNodes] ------------------- Parse the graph and create SimNodes -------------------");
 #endif                
-
                 SimNodeCreatorFrame         sn_frame(control, center);
                 SimNodeCreatorCollidable    sn_collidable(control, center);
                 SimNodeCreatorInertial      sn_inertial(control, center);
