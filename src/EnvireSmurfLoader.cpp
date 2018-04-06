@@ -98,6 +98,10 @@ namespace mars {
                                     std::string robotname)
             {
                 LOG_DEBUG("[EnvireSmurfLoader::loadFile] load smurf to zero position");
+                std::cout << "EnvireSmurfLoader::loadFile: " << filename << " " << tmpPath << std::endl;
+
+                this->smurf_filename = filename;
+
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 iniPose.transform.orientation = base::Quaterniond::Identity();
@@ -111,6 +115,9 @@ namespace mars {
                                 std::string robotname, mars::utils::Vector pos, mars::utils::Vector rot)
             {
                 LOG_DEBUG("[EnvireSmurfLoader::loadFile] Smurf loader given position");
+
+                this->smurf_filename = filename;
+
                 std::string suffix = utils::getFilenameSuffix(filename);
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
@@ -146,10 +153,9 @@ namespace mars {
                 return EnvireStorageManager::instance()->getGraph()->getVertex(center);
             }
 
-            void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
+            /*void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
             {
-                printf("not implemented : %s\n", __PRETTY_FUNCTION__);
-                /*mars::interfaces::NodeData data;
+                mars::interfaces::NodeData data;
                 data.init("floorData", mars::utils::Vector(0,0,0));
                 data.initPrimitive(interfaces::NODE_TYPE_BOX, mars::utils::Vector(25, 25, 0.1), 0.0001);
                 data.movable = false;
@@ -160,8 +166,8 @@ namespace mars {
                 data.material.emissionFront = mars::utils::Color(1.0, 1.0, 1.0, 1.0);
                 LOG_DEBUG("Color of the Item in the addFloor: %f , %f, %f, %f", data.material.emissionFront.a , data.material.emissionFront.b, data.material.emissionFront.g, data.material.emissionFront.r );
                 data.toConfigMap(&(item.get()->getData()));
-                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);*/
-            }           
+                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);
+            }  */         
 
             void EnvireSmurfLoader::createSimObjects()
             {
@@ -182,10 +188,18 @@ namespace mars {
 #ifdef DEBUG
                 LOG_DEBUG("[EnvireSmurfLoader::loadNodes] ------------------- Parse the graph and create SimNodes -------------------");
 #endif                
+
+                std::string filename_path = mars::utils::getPathOfFile(this->smurf_filename);
+                std::cout << "----------filename_path: " << filename_path << std::endl;
+
                 SimNodeCreatorFrame         sn_frame(control, center);
+                sn_frame.setFilenamePath(filename_path);
                 SimNodeCreatorCollidable    sn_collidable(control, center);
+                sn_collidable.setFilenamePath(filename_path);
                 SimNodeCreatorInertial      sn_inertial(control, center);
+                sn_inertial.setFilenamePath(filename_path);
                 SimNodeCreatorVisual        sn_visual(control, center);
+                sn_visual.setFilenamePath(filename_path);
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;

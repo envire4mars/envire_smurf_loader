@@ -83,7 +83,7 @@ namespace mars {
       private:
         interfaces::ControlCenter *control;
 
-        void addFloor(const envire::core::GraphTraits::vertex_descriptor &center);
+        //void addFloor(const envire::core::GraphTraits::vertex_descriptor &center);
 
         void addRobot(std::string filename,  envire::core::GraphTraits::vertex_descriptor center, envire::core::Transform iniPose);
 
@@ -102,6 +102,8 @@ namespace mars {
         void loadJoint(envire::core::EnvireGraph::vertex_iterator v_itr, std::string type_name);
 
         envire::core::FrameId center;
+
+        std::string smurf_filename;
 
       }; // end of class definition EnvireSmurfLoader
 
