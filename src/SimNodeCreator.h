@@ -75,6 +75,8 @@ namespace mars {
             envire::core::FrameId origin_frame_id;
             std::string type_name;
 
+            std::string filename_path;
+
             virtual mars::interfaces::NodeData createNodeData(const ItemDataType &item_data) = 0;
 
             void poseToVectorAndQuaternion(const urdf::Pose &pose, mars::utils::Vector *v, mars::utils::Quaternion*q) {
@@ -86,6 +88,11 @@ namespace mars {
             SimNodeCreator(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id, std::string type_name)
                 : control(control), origin_frame_id(origin_frame_id), type_name(type_name)
             {}
+
+            void setFilenamePath(std::string filename_path)
+            {
+                this->filename_path = filename_path;
+            }
 
             void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
             {
@@ -129,13 +136,13 @@ namespace mars {
                 mars::interfaces::NodeInterface* node_physics = mars::sim::PhysicsMapper::newNodePhysics(control->sim->getPhysics());
 
                 bool instantiated = false;
-                if(node_data.physicMode == mars::interfaces::NODE_TYPE_MLS) {
+                /*if(node_data.physicMode == mars::interfaces::NODE_TYPE_MLS) {
                     //instantiated = addMlsSurface(node.get());
                     LOG_ERROR("[SimNodeCreator::createSimNode] NOT IMPLEMENTED NODE_TYPE_MLS");
                 }
-                else  {
+                else  {*/
                     instantiated = (node_physics->createNode(&node_data));
-                }
+                //}
 
                 // create SimNode and add it into the graph
                 if (instantiated) {                           
@@ -194,6 +201,8 @@ namespace mars {
             {
                 // FIX: do we need to add frames into simuation
                 // to create simnode for each frame???
+
+                std::cout << "createNodeData FRAME: " << frame.getName() << std::endl;
 
                 boost::shared_ptr<urdf::Sphere> sphere( new urdf::Sphere);
                 sphere->radius = 0.01;
@@ -277,7 +286,7 @@ namespace mars {
                         tmpV = ((urdf::Mesh*) tmpGeometry.get())->scale;
                         scale = mars::utils::Vector(tmpV.x, tmpV.y, tmpV.z);
                         mars::utils::vectorToConfigItem(&config["physicalScale"][0], &scale);
-                        config["filename"] = ((urdf::Mesh*) tmpGeometry.get())->filename;
+                        config["filename"] = filename_path + ((urdf::Mesh*) tmpGeometry.get())->filename;
                         config["origname"] = "";
                         config["physicmode"] = "mesh";
                         config["loadSizeFromMesh"] = true;
@@ -442,7 +451,7 @@ namespace mars {
                   case urdf::Geometry::MESH:
                     tmpV = ((urdf::Mesh*) tmpGeometry.get())->scale;
                     scale = mars::utils::Vector(tmpV.x, tmpV.y, tmpV.z);
-                    config["filename"] = ((urdf::Mesh*) tmpGeometry.get())->filename;
+                    config["filename"] = filename_path + ((urdf::Mesh*) tmpGeometry.get())->filename;
                     config["origname"] = "";
                     break;
                   default:
@@ -450,7 +459,7 @@ namespace mars {
                   }
                 mars::utils::vectorToConfigItem(&config["visualsize"][0], &size);
                 mars::utils::vectorToConfigItem(&config["visualscale"][0], &scale);
-                config["materialName"] = visual.material_name;
+                config["materialName"] = visual.getMaterial().getName();
 
                 //addEmptyCollisionToNode(&config);
                 mars::utils::Vector size_tmp(0.01, 0.01, 0.01);
@@ -464,13 +473,27 @@ namespace mars {
                 // ---- create materials
                 configmaps::ConfigMap material_config;
                 //material_config["id"] = nextMaterialID++;
-                material_config["name"] = visual.material->name;
+                material_config["name"] = visual.getMaterial().getName();
                 material_config["exists"] = true;
-                material_config["diffuseFront"][0]["a"] = (double) visual.material->color.a;
-                material_config["diffuseFront"][0]["r"] = (double) visual.material->color.r;
-                material_config["diffuseFront"][0]["g"] = (double) visual.material->color.g;
-                material_config["diffuseFront"][0]["b"] = (double) visual.material->color.b;
-                material_config["texturename"] = visual.material->texture_filename;
+
+                material_config["diffuseColor"]["a"] = (double) visual.getMaterial().getDiffuseColor().a;
+                material_config["diffuseColor"]["r"] = (double) visual.getMaterial().getDiffuseColor().r;
+                material_config["diffuseColor"]["g"] = (double) visual.getMaterial().getDiffuseColor().g;
+                material_config["diffuseColor"]["b"] = (double) visual.getMaterial().getDiffuseColor().b;
+
+                material_config["ambientColor"]["a"] = (double) visual.getMaterial().getAmbientColor().a;
+                material_config["ambientColor"]["r"] = (double) visual.getMaterial().getAmbientColor().r;
+                material_config["ambientColor"]["g"] = (double) visual.getMaterial().getAmbientColor().g;
+                material_config["ambientColor"]["b"] = (double) visual.getMaterial().getAmbientColor().b;
+
+                material_config["specularColor"]["a"] = (double) visual.getMaterial().getSpecularColor().a;
+                material_config["specularColor"]["r"] = (double) visual.getMaterial().getSpecularColor().r;
+                material_config["specularColor"]["g"] = (double) visual.getMaterial().getSpecularColor().g;
+                material_config["specularColor"]["b"] = (double) visual.getMaterial().getSpecularColor().b;         
+
+                material_config["shininess"] = (double) visual.getMaterial().getShininess();       
+
+                material_config["texturename"] = visual.getMaterial().getTextureFilename();
 
                 // FIX: tmpPath
                 std::string tmpPath("");
