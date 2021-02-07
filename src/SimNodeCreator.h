@@ -202,8 +202,7 @@ namespace mars {
                 // FIX: do we need to add frames into simuation
                 // to create simnode for each frame???
 
-                std::cout << "createNodeData FRAME: " << frame.getName() << std::endl;
-
+                LOG_DEBUG("createNodeData FRAME: " + frame.getName());
                 boost::shared_ptr<urdf::Sphere> sphere( new urdf::Sphere);
                 sphere->radius = 0.01;
                 //y and z are unused
