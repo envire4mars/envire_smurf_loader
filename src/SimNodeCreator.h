@@ -133,7 +133,7 @@ namespace mars {
             void createSimNode(mars::interfaces::NodeData &node_data, envire::core::FrameId frame_id, std::string name) 
             {
                 // create NodePhysik
-                mars::interfaces::NodeInterface* node_physics = mars::sim::PhysicsMapper::newNodePhysics(control->sim->getPhysics());
+                std::shared_ptr<mars::interfaces::NodeInterface> node_physics = mars::sim::PhysicsMapper::newNodePhysics(control->sim->getPhysics());
 
                 bool instantiated = false;
                 /*if(node_data.physicMode == mars::interfaces::NODE_TYPE_MLS) {
@@ -202,8 +202,7 @@ namespace mars {
                 // FIX: do we need to add frames into simuation
                 // to create simnode for each frame???
 
-                std::cout << "createNodeData FRAME: " << frame.getName() << std::endl;
-
+                LOG_DEBUG("createNodeData FRAME: " + frame.getName());
                 boost::shared_ptr<urdf::Sphere> sphere( new urdf::Sphere);
                 sphere->radius = 0.01;
                 //y and z are unused
