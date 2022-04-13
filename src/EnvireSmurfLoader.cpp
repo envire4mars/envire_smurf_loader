@@ -70,11 +70,11 @@ namespace mars {
                 marsSim = libManager->getLibraryAs<mars::interfaces::SimulatorInterface>("mars_sim");
                 if(marsSim) {
                     control = marsSim->getControlCenter();
-                    control->loadCenter->loadScene[".zsmurf"] = this; // zipped smurf model
-                    control->loadCenter->loadScene[".zsmurfs"] = this; // zipped smurf scene
+                    //control->loadCenter->loadScene[".zsmurf"] = this; // zipped smurf model
+                    //control->loadCenter->loadScene[".zsmurfs"] = this; // zipped smurf scene
                     control->loadCenter->loadScene[".smurf"] = this; // smurf model
-                    control->loadCenter->loadScene[".smurfs"] = this; // smurf scene
-                    control->loadCenter->loadScene[".svg"] = this; // smurfed vector graphic
+                    //control->loadCenter->loadScene[".smurfs"] = this; // smurf scene
+                    //control->loadCenter->loadScene[".svg"] = this; // smurfed vector graphic
                     control->loadCenter->loadScene[".urdf"] = this; // urdf model
                     LOG_INFO("envire_smurf_loader: SMURF loader to loadCenter");                    
                 }
