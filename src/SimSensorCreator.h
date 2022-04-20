@@ -97,10 +97,12 @@ namespace mars {
 
                     using SensorItemPtr = envire::core::Item<std::shared_ptr<mars::interfaces::BaseSensor>>::Ptr;
 
-                    if (item_data.getType() == "RotatingRaySensor")
+                    // TODO: do we really need this? Or can we add any sensor as BaseSensor?
+                    if (item_data.getType() == "RotatingRaySensor" || item_data.getType() == "Joint6DOF"
+                            || item_data.getType() == "CameraSensor" || item_data.getType() == "RaySensor")
                     {
 #ifdef DEBUG
-                        LOG_DEBUG(("[SimSensorCreator::create] " + type_name + " RotatingRaySensor ***" + item_data.getName() + "*** was found" ).c_str());
+                        LOG_DEBUG(("[SimSensorCreator::create] " + type_name + " " + item_data.getType() + " ***" + item_data.getName() + "*** was found" ).c_str());
 #endif
 
                         std::shared_ptr<mars::interfaces::BaseSensor> sensor(createSensor(item_data, frame_id));
@@ -119,42 +121,9 @@ namespace mars {
                         } else {
                             LOG_DEBUG(("[SimSensorCreator::create] *" + item_data.getType() + "* *" + item_data.getName() + "* is attached (frame: " + frame_id + ")").c_str());
                         }
+                    } else {
+                        LOG_ERROR(("[SimSensorCreator::create] " + type_name + " UnknownType (" + item_data.getType() + ")  ***" + item_data.getName() + "*** was found. Since the type is unknown, it was not added into the graph." ).c_str());
                     }
-                    else if (item_data.getType() == "Joint6DOF")
-                    {
-#ifdef DEBUG
-                        LOG_DEBUG(("[SimSensorCreator::create] " + type_name + " Joint6DOF ***" + item_data.getName() + "*** was found" ).c_str());
-#endif
-
-                        std::shared_ptr<mars::interfaces::BaseSensor> sensor(createSensor(item_data, frame_id));
-
-                        SensorItemPtr sensorItem(new envire::core::Item<std::shared_ptr<mars::interfaces::BaseSensor>>(sensor));
-                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, sensorItem);
-
-#ifdef DEBUG
-                        LOG_DEBUG("[SimSensorCreator::create] Base sensor instantiated and added to the graph.");
-#endif
-
-                        bool attached = attachSensor(sensor.get(), frame_id);
-                        if (!attached)
-                        {
-                            LOG_ERROR(("[SimSensorCreator::create] Could not find node interface to which to attach the sensor *" + item_data.getName() + "*.").c_str());
-                        } else 
-                        {
-#ifdef DEBUG              
-                            LOG_DEBUG(("[SimSensorCreator::create] *" + item_data.getType() + "* *" + item_data.getName() + "* is attached (frame: " + frame_id + ")").c_str());
-#endif
-                        }
-                    }
-                    else
-                    {
-#ifdef DEBUG
-                        LOG_DEBUG(("[SimSensorCreator::create] " + type_name + " UnknownType ***" + item_data.getName() + "*** was found" ).c_str());
-#endif
-                    }
-
-
-                    
                 }         
             }
 
@@ -162,7 +131,7 @@ namespace mars {
             {
                 configmaps::ConfigMap sensorMap = sensorSmurf.getMap();
                 sensorMap["nodeID"] = control->nodes->getID((std::string) sensorMap["link"]);
-                // TODO_A: check if we can get jointID over graph back by using frameid
+                // TODO: check if we can get jointID over graph back by using frameid
                 sensorMap["jointID"] = control->joints->getID(sensorSmurf.getJointName());
                 sensorMap["frame"] = frameId;
                 mars::interfaces::BaseSensor* sensor = control->sensors->createAndAddSensor(&sensorMap); 
