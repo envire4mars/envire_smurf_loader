@@ -10,6 +10,7 @@
     <depend package="simulation/mars/interfaces" />
     <depend package="simulation/mars/entity_generation/entity_factory" />
     <depend package="envire/envire_smurf" />
+    <depend package="simulation/envire_managers" />
     <depend package="tools/lib_config" />
     <!--<depend package="simulation/mars/envire_managers" />-->    
     <!--<depend package="envire/envire_collider_mls" />    -->
