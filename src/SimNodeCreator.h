@@ -61,6 +61,9 @@
 
 #include <mars/plugins/envire_managers/EnvireStorageManager.hpp>
 
+#include <mars/utils/misc.h>
+#include <mars/utils/mathUtils.h>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
@@ -453,7 +456,8 @@ namespace mars {
                     break;
                   default:
                     break;
-                  }
+                }
+
                 mars::utils::vectorToConfigItem(&config["visualsize"][0], &size);
                 mars::utils::vectorToConfigItem(&config["visualscale"][0], &scale);
                 config["materialName"] = visual.getMaterial().getName();
@@ -463,6 +467,23 @@ namespace mars {
                 config["physicmode"] = "box";
                 config["coll_bitmask"] = 0;
                 mars::utils::vectorToConfigItem(&config["extend"][0], &size_tmp);  
+
+                // DIRTY FIX: quick fix to load .bobj instead of stl
+                // this will only work if .bobj under the same path as stl
+                // took from simulation/mars/entity_generation/smurf
+                std::string suffix, tmpfilename;
+                // check if we can use .bobj
+                tmpfilename = trim(config.get("filename", tmpfilename));
+                // if we have an actual file name
+                if (!tmpfilename.empty()) {
+                    suffix = mars::utils::getFilenameSuffix(tmpfilename);
+                    if (suffix == ".stl" || suffix == ".STL") {
+                        // turn our relative filename into an absolute filename
+                        mars::utils::removeFilenameSuffix(&tmpfilename);
+                        tmpfilename.append(".bobj");
+                        config["filename"] = tmpfilename;
+                    }
+                }         
 
                 mars::interfaces::NodeData node;  
                 node.fromConfigMap(&config, "", control->loadCenter);
@@ -500,6 +521,16 @@ namespace mars {
                 node.material = material;
                 node.simNodeType = mars::interfaces::SimNodeType::VISUAL;  
 
+                // took from simulation/mars/entity_generation/smurf
+                // check if meshes are stored as `.stl` file
+                // than fix rotation issue
+                suffix = mars::utils::getFilenameSuffix(node.filename);
+                if (suffix == ".stl" || suffix == ".STL") {
+                    // add an additional rotation of -90.0 degree due to wrong definition
+                    // of which direction is up within .stl (for .stl -Y is up and in MARS
+                    // Z is up)
+                    node.visual_offset_rot *= mars::utils::eulerToQuaternion(mars::utils::Vector(-90.0, 0.0, 0.0));
+                }       
                 return node;
             }               
         };        
