@@ -37,8 +37,8 @@
 
 // set define if you want to extend the gui
 //#define PLUGIN_WITH_MARS_GUI
-#include <mars/interfaces/sim/LoadSceneInterface.h>
-#include <mars/interfaces/sim/ControlCenter.h>
+#include <mars/interfaces/sim/MarsPluginTemplate.h>
+#include <mars/entity_generation/entity_factory/EntityFactoryInterface.h>
 
 #include <mars/interfaces/NodeData.h>
 
@@ -55,31 +55,28 @@ namespace mars {
     namespace EnvireSmurfLoader {
 
       // inherit from MarsPluginTemplateGUI for extending the gui
-      class EnvireSmurfLoader: public mars::interfaces::LoadSceneInterface {
+      class EnvireSmurfLoader: public mars::interfaces::MarsPluginTemplate,
+                               public mars::entity_generation::EntityFactoryInterface {
 
 
       public:
         EnvireSmurfLoader(lib_manager::LibManager *theManager);
-        ~EnvireSmurfLoader();
+        ~EnvireSmurfLoader() {};
 
-        // LibInterface methods
-        int getLibVersion() const
-        { return 1; }
-        const std::string getLibName() const
-        { return std::string("envire_smurf_loader"); }
+        // lib_manager::LibInterface (inherited by MarsPluginTemplate) methods
+        virtual int getLibVersion() const { return 1; }
+        virtual const std::string getLibName() const{ return std::string("envire_smurf_loader"); }
         CREATE_MODULE_INFO();
 
-        virtual bool loadFile(std::string filename, std::string tmpPath,
-                                std::string robotname);
+        // mars::interfaces::PluginInterface (inherited by MarsPluginTemplate) methods     
+        virtual void update(mars::interfaces::sReal time_ms) { std::cout << "update" << std::endl;};
+        virtual void reset(void) {};
+        virtual void init(void) {};
 
-        virtual bool loadFile(std::string filename, std::string tmpPath,
-                                std::string robotname, utils::Vector pos, utils::Vector rot);
-
-
-        virtual int saveFile(std::string filename, std::string tmpPath);
+        // mars::entity_generation::EntityFactoryInterface method
+        virtual mars::sim::SimEntity* createEntity(const configmaps::ConfigMap& config);        
 
       private:
-        interfaces::ControlCenter *control;
 
         //void addFloor(const envire::core::GraphTraits::vertex_descriptor &center);
 
@@ -98,8 +95,6 @@ namespace mars {
 
         template <class ItemDataType>
         void loadJoint(envire::core::EnvireGraph::vertex_iterator v_itr, std::string type_name);
-
-        envire::core::FrameId center;
 
         std::string smurf_filename;
 

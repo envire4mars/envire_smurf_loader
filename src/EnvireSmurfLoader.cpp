@@ -37,6 +37,8 @@
 #include <mars/sim/SimNode.h>
 #include <mars/utils/misc.h>
 
+#include <mars/entity_generation/entity_factory/EntityFactoryManager.h>
+
 #include <lib_config/YAMLConfiguration.hpp>
 // To populate the Graph from the smurf
 #include <envire_smurf/GraphLoader.hpp>
@@ -64,76 +66,40 @@ namespace mars {
             using namespace mars::plugins::envire_managers;
             
             EnvireSmurfLoader::EnvireSmurfLoader(lib_manager::LibManager *theManager)
-                : LoadSceneInterface(theManager), control(NULL), nextGroupId(1)
+                : mars::interfaces::MarsPluginTemplate(theManager, "EnvireSmurfLoader"),
+                  mars::entity_generation::EntityFactoryInterface("smurf, urdf"), 
+                  nextGroupId(1)
             {
-                mars::interfaces::SimulatorInterface *marsSim;
-                marsSim = libManager->getLibraryAs<mars::interfaces::SimulatorInterface>("mars_sim");
-                if(marsSim) {
-                    control = marsSim->getControlCenter();
-                    //control->loadCenter->loadScene[".zsmurf"] = this; // zipped smurf model
-                    //control->loadCenter->loadScene[".zsmurfs"] = this; // zipped smurf scene
-                    control->loadCenter->loadScene[".smurf"] = this; // smurf model
-                    //control->loadCenter->loadScene[".smurfs"] = this; // smurf scene
-                    //control->loadCenter->loadScene[".svg"] = this; // smurfed vector graphic
-                    control->loadCenter->loadScene[".urdf"] = this; // urdf model
-                    LOG_INFO("envire_smurf_loader: SMURF loader to loadCenter");                    
-                }
+                LOG_INFO("envire_smurf_loader: SMURF loader to loadCenter");                    
 
-                center = SIM_CENTER_FRAME_NAME;
+                mars::entity_generation::EntityFactoryManager* factoryManager =
+                    theManager->acquireLibraryAs<mars::entity_generation::EntityFactoryManager>(
+                        "mars_entity_factory");
+                factoryManager->registerFactory("smurf", this);
+                factoryManager->registerFactory("urdf", this);
+                theManager->releaseLibrary("mars_entity_factory");
             }
 
-            EnvireSmurfLoader::~EnvireSmurfLoader() {
-              if(control) {
-                control->loadCenter->loadScene.erase(".zsmurf");
-                control->loadCenter->loadScene.erase(".zsmurfs");
-                control->loadCenter->loadScene.erase(".smurf");
-                control->loadCenter->loadScene.erase(".smurfs");
-                control->loadCenter->loadScene.erase(".svg");
-                control->loadCenter->loadScene.erase(".urdf");
-                libManager->releaseLibrary("mars_sim");
-              }                
-            }       
+            mars::sim::SimEntity* EnvireSmurfLoader::createEntity(const configmaps::ConfigMap& config) { 
+                configmaps::ConfigMap entityconfig = config;
+                std::string path = (std::string)entityconfig["path"];
+                std::string file = (std::string)entityconfig["file"];
+                std::string name = (std::string)entityconfig["name"];
 
-            bool EnvireSmurfLoader::loadFile(std::string filename, std::string tmpPath,
-                                    std::string robotname)
-            {
-                LOG_DEBUG("[EnvireSmurfLoader::loadFile] load smurf to zero position");
-                std::cout << "EnvireSmurfLoader::loadFile: " << filename << " " << tmpPath << std::endl;
+                this->smurf_filename = path + file;                
 
-                this->smurf_filename = filename;
+                std::cout << "EnvireSmurfLoader::createEntity for " << name << 
+                            " from file: " << this->smurf_filename << std::endl;
 
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 iniPose.transform.orientation = base::Quaterniond::Identity();
                 iniPose.transform.translation << 0.0, 0.0, 0.3;
-                addRobot(filename, center, iniPose);
+                addRobot(this->smurf_filename, center, iniPose);
                 createSimObjects();
-                return true;
-            }
 
-            bool EnvireSmurfLoader::loadFile(std::string filename, std::string tmpPath,
-                                std::string robotname, mars::utils::Vector pos, mars::utils::Vector rot)
-            {
-                LOG_DEBUG("[EnvireSmurfLoader::loadFile] Smurf loader given position");
-
-                this->smurf_filename = filename;
-
-                std::string suffix = utils::getFilenameSuffix(filename);
-                vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
-                envire::core::Transform iniPose;
-                // FIXME TODO use rot input. Is it Euler angles or scaled axis?
-                iniPose.transform.orientation = base::Quaterniond::Identity();
-                iniPose.transform.translation = pos;
-                addRobot(filename, center, iniPose);
-                createSimObjects();
-                return true;
-            }    
-
-            int EnvireSmurfLoader::saveFile(std::string filename, std::string tmpPath)
-            {
                 return 0;
-            }
-
+            };               
 
             void EnvireSmurfLoader::addRobot(std::string filename, vertex_descriptor center, envire::core::Transform iniPose)
             {
@@ -143,23 +109,7 @@ namespace mars {
                 robot->loadFromSmurf(path);
                 envire::smurf::GraphLoader graphLoader(EnvireStorageManager::instance()->getGraph());
                 graphLoader.loadRobot(nextGroupId, center, iniPose, *robot);
-            }
-
-            /*void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
-            {
-                mars::interfaces::NodeData data;
-                data.init("floorData", mars::utils::Vector(0,0,0));
-                data.initPrimitive(interfaces::NODE_TYPE_BOX, mars::utils::Vector(25, 25, 0.1), 0.0001);
-                data.movable = false;
-                mars::sim::PhysicsConfigMapItem::Ptr item(new mars::sim::PhysicsConfigMapItem);
-                data.material.transparency = 0.5;
-                //data.material.ambientFront = mars::utils::Color(0.0, 1.0, 0.0, 1.0);
-                // TODO Fix the material data is lost in the conversion from/to configmap
-                data.material.emissionFront = mars::utils::Color(1.0, 1.0, 1.0, 1.0);
-                LOG_DEBUG("Color of the Item in the addFloor: %f , %f, %f, %f", data.material.emissionFront.a , data.material.emissionFront.b, data.material.emissionFront.g, data.material.emissionFront.r );
-                data.toConfigMap(&(item.get()->getData()));
-                EnvireStorageManager::instance()->getGraph()->addItemToFrame(EnvireStorageManager::instance()->getGraph()->getFrameId(center), item);
-            }  */         
+            }  
 
             void EnvireSmurfLoader::createSimObjects()
             {
@@ -184,13 +134,13 @@ namespace mars {
                 std::string filename_path = mars::utils::getPathOfFile(this->smurf_filename);
                 std::cout << "----------filename_path: " << filename_path << std::endl;
 
-                SimNodeCreatorFrame         sn_frame(control, center);
+                SimNodeCreatorFrame         sn_frame(control, SIM_CENTER_FRAME_NAME);
                 sn_frame.setFilenamePath(filename_path);
-                SimNodeCreatorCollidable    sn_collidable(control, center);
+                SimNodeCreatorCollidable    sn_collidable(control, SIM_CENTER_FRAME_NAME);
                 sn_collidable.setFilenamePath(filename_path);
-                SimNodeCreatorInertial      sn_inertial(control, center);
+                SimNodeCreatorInertial      sn_inertial(control, SIM_CENTER_FRAME_NAME);
                 sn_inertial.setFilenamePath(filename_path);
-                SimNodeCreatorVisual        sn_visual(control, center);
+                SimNodeCreatorVisual        sn_visual(control, SIM_CENTER_FRAME_NAME);
                 sn_visual.setFilenamePath(filename_path);
 
                 // search the graph
@@ -217,8 +167,8 @@ namespace mars {
                 LOG_DEBUG("[EnvireSmurfLoader::loadJoints] ------------------- Parse the graph and create SimJoints -------------------");
 #endif                
 
-                SimJointCreatorJoint            sj_joint(control, center);
-                SimJointCreatorStaticTranf      sj_static_tranf(control, center);
+                SimJointCreatorJoint            sj_joint(control, SIM_CENTER_FRAME_NAME);
+                SimJointCreatorStaticTranf      sj_static_tranf(control, SIM_CENTER_FRAME_NAME);
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
@@ -241,7 +191,7 @@ namespace mars {
                 LOG_DEBUG("[EnvireSmurfLoader::loadMotors] ------------------- Parse the graph and create SimMotors -------------------");
 #endif                
 
-                SimMotorCreator sm(control, center);
+                SimMotorCreator sm(control, SIM_CENTER_FRAME_NAME);
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
@@ -263,7 +213,7 @@ namespace mars {
                 LOG_DEBUG("[EnvireSmurfLoader::loadSensors] ------------------- Parse the graph and create SimSensors -------------------");
 #endif                
 
-                SimSensorCreator sm(control, center);
+                SimSensorCreator sm(control, SIM_CENTER_FRAME_NAME);
 
                 // search the graph
                 envire::core::EnvireGraph::vertex_iterator v_itr, v_end;
