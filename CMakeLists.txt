@@ -12,6 +12,7 @@ pkg_check_modules(PKGCONFIG REQUIRED
           lib_manager
           data_broker
           mars_interfaces
+          mars_entity_factory
           smurf_parser
           configmaps
           urdfdom
