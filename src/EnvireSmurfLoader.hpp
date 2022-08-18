@@ -62,8 +62,6 @@ namespace mars {
         EnvireSmurfLoader(lib_manager::LibManager *theManager);
         ~EnvireSmurfLoader();
 
-        envire::core::GraphTraits::vertex_descriptor addCenter();
-
         // LibInterface methods
         int getLibVersion() const
         { return 1; }

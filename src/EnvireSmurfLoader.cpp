@@ -144,14 +144,6 @@ namespace mars {
                 envire::smurf::GraphLoader graphLoader(EnvireStorageManager::instance()->getGraph());
                 graphLoader.loadRobot(nextGroupId, center, iniPose, *robot);
             }
-            
-            vertex_descriptor EnvireSmurfLoader::addCenter()
-            {
-                center = SIM_CENTER_FRAME_NAME;
-                if (! EnvireStorageManager::instance()->getGraph()->containsFrame(center))
-                    EnvireStorageManager::instance()->getGraph()->addFrame(center);
-                return EnvireStorageManager::instance()->getGraph()->getVertex(center);
-            }
 
             /*void EnvireSmurfLoader::addFloor(const vertex_descriptor &center)
             {
