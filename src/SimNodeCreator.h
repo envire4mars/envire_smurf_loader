@@ -80,6 +80,11 @@ namespace mars {
 
             std::string filename_path;
 
+            // TODO: this should be moved to more general place
+            // since it can be used in any other lib
+            mars::interfaces::MaterialData material_empty_visual;
+            mars::interfaces::MaterialData material_origin;
+
             virtual mars::interfaces::NodeData createNodeData(const ItemDataType &item_data) = 0;
 
             void poseToVectorAndQuaternion(const urdf::Pose &pose, mars::utils::Vector *v, mars::utils::Quaternion*q) {
@@ -90,7 +95,20 @@ namespace mars {
         public:
             SimNodeCreator(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id, std::string type_name)
                 : control(control), origin_frame_id(origin_frame_id), type_name(type_name)
-            {}
+            {
+                // set empty visual material
+                material_empty_visual.name = "_emptyVisualMaterial";
+                material_empty_visual.exists = true;
+                material_empty_visual.diffuseFront = mars::utils::Color(1.0, 0.0, 0.0, 1.0);
+                material_empty_visual.texturename = "";
+
+                // set material for origin
+                material_origin.name = "_originMaterial";
+                material_origin.exists = true;
+                material_origin.diffuseFront = mars::utils::Color(0.0, 0.0, 1.0, 1.0);
+                material_origin.texturename = "";
+                material_origin.cullMask = 0;      
+            }
 
             void setFilenamePath(std::string filename_path)
             {
@@ -202,29 +220,27 @@ namespace mars {
         private:
             virtual mars::interfaces::NodeData createNodeData(const smurf::Frame &frame)
             {
-                // FIX: do we need to add frames into simuation
-                // to create simnode for each frame???
+                // create visual primitive for node
                 boost::shared_ptr<urdf::Sphere> sphere( new urdf::Sphere);
                 sphere->radius = 0.01;
-                //y and z are unused
-                base::Vector3d extents(sphere->radius, 0, 0);
+                base::Vector3d extents(sphere->radius, 0, 0); //y and z are unused
 
                 // create NodeData
                 mars::interfaces::NodeData node;
                 node.init(frame.getName());
-                node.initPrimitive(mars::interfaces::NODE_TYPE_SPHERE, extents, 0.00001); //mass is zero because it doesnt matter for visual representation
-                node.material.emissionFront = mars::utils::Color(1.0, 0.0, 0.0, 1.0);
+                //mass is zero because it doesnt matter for visual representation
+                node.initPrimitive(mars::interfaces::NODE_TYPE_SPHERE, extents, 0.00001); 
+                //node.material.emissionFront = mars::utils::Color(1.0, 0.0, 0.0, 1.0);
+                node.material = material_empty_visual;
                 node.c_params.coll_bitmask = 0;
                 node.movable = true;
                 node.groupID = frame.getGroupId();
                 node.density = 0.0;      
+                // TODO: do we need this
+                //node.origname = "";                
 
-                // FIX: show the frame as small spheres
-                // change to physical representation for example
 
-                // add empty visual
-                node.map["origname"] = "";
-                node.map["materialName"] = "_emptyVisualMaterial";
+                node.map["materialName"] = material_empty_visual.name;
                 node.map["visualType"] = "empty";    
 
                 node.simNodeType = mars::interfaces::SimNodeType::FRAME;                       
@@ -309,7 +325,7 @@ namespace mars {
 
                 // addEmptyVisualToNode(&config);
                 config["origname"] = "";
-                config["materialName"] = "_emptyVisualMaterial";
+                config["materialName"] = material_empty_visual.name;
                 config["visualType"] = "empty";     
 
                 mars::interfaces::NodeData node;  
@@ -374,7 +390,7 @@ namespace mars {
                 // complete node
                 //addEmptyVisualToNode(&config);
                 config["origname"] = "";
-                config["materialName"] = "_emptyVisualMaterial";
+                config["materialName"] = material_empty_visual.name;
                 config["visualType"] = "empty";
                 //addEmptyCollisionToNode(&config);
                 mars::utils::Vector size(0.01, 0.01, 0.01);
@@ -384,6 +400,8 @@ namespace mars {
                 mars::interfaces::NodeData node;  
                 node.fromConfigMap(&config, "", control->loadCenter);
                 node.simNodeType = mars::interfaces::SimNodeType::INERTIA;                
+
+
                 
                 return node; 
             }               
