@@ -90,6 +90,19 @@ namespace mars {
             void poseToVectorAndQuaternion(const urdf::Pose &pose, mars::utils::Vector *v, mars::utils::Quaternion*q) {
                 *v = mars::utils::Vector(pose.position.x, pose.position.y, pose.position.z);
                 *q = mars::utils::quaternionFromMembers(pose.rotation); //Quaternion(pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w);
+            }     
+
+            void addEmptyVisualToNode(configmaps::ConfigMap *map) {
+                (*map)["origname"] = "";
+                (*map)["materialName"] = material_empty_visual.name;
+                (*map)["visualType"] = "empty";
+            }       
+
+            void addEmptyCollisionToNode(configmaps::ConfigMap *map) {
+                mars::utils::Vector size(0.01, 0.01, 0.01);
+                (*map)["physicmode"] = "box";
+                (*map)["coll_bitmask"] = 0;
+                mars::utils::vectorToConfigItem(&(*map)["extend"], &size);
             }            
 
         public:
@@ -236,10 +249,10 @@ namespace mars {
                 node.movable = true;
                 node.groupID = frame.getGroupId();
                 node.density = 0.0;      
-                // TODO: do we need this
-                //node.origname = "";                
-
-
+       
+                // TODO: this should be replace by addEmptyVisualToNode(NodeData &node)
+                node.material = material_empty_visual;
+                node.map["origname"] = "";
                 node.map["materialName"] = material_empty_visual.name;
                 node.map["visualType"] = "empty";    
 
@@ -323,14 +336,12 @@ namespace mars {
                 mars::utils::vectorToConfigItem(&config["position"][0], &v);
                 mars::utils::quaternionToConfigItem(&config["rotation"][0], &q);
 
-                // addEmptyVisualToNode(&config);
-                config["origname"] = "";
-                config["materialName"] = material_empty_visual.name;
-                config["visualType"] = "empty";     
+                addEmptyVisualToNode(&config); 
 
                 mars::interfaces::NodeData node;  
                 node.fromConfigMap(&config, "", control->loadCenter);
                 node.simNodeType = mars::interfaces::SimNodeType::COLLISION;
+                node.material = material_empty_visual;
                 
                 return node; 
             }      
@@ -389,19 +400,13 @@ namespace mars {
 
                 // complete node
                 //addEmptyVisualToNode(&config);
-                config["origname"] = "";
-                config["materialName"] = material_empty_visual.name;
-                config["visualType"] = "empty";
-                //addEmptyCollisionToNode(&config);
-                mars::utils::Vector size(0.01, 0.01, 0.01);
-                config["physicmode"] = "box";
-                config["coll_bitmask"] = 0;                
+                addEmptyVisualToNode(&config); 
+                addEmptyCollisionToNode(&config);            
 
                 mars::interfaces::NodeData node;  
                 node.fromConfigMap(&config, "", control->loadCenter);
                 node.simNodeType = mars::interfaces::SimNodeType::INERTIA;                
-
-
+                node.material = material_empty_visual;
                 
                 return node; 
             }               
@@ -478,13 +483,8 @@ namespace mars {
 
                 mars::utils::vectorToConfigItem(&config["visualsize"][0], &size);
                 mars::utils::vectorToConfigItem(&config["visualscale"][0], &scale);
-                config["materialName"] = visual.getMaterial().getName();
 
-                //addEmptyCollisionToNode(&config);
-                mars::utils::Vector size_tmp(0.01, 0.01, 0.01);
-                config["physicmode"] = "box";
-                config["coll_bitmask"] = 0;
-                mars::utils::vectorToConfigItem(&config["extend"][0], &size_tmp);  
+                addEmptyCollisionToNode(&config);
 
                 // DIRTY FIX: quick fix to load .bobj instead of stl
                 // this will only work if .bobj under the same path as stl
@@ -530,6 +530,8 @@ namespace mars {
                 material_config["shininess"] = (double) visual.getMaterial().getShininess();       
 
                 material_config["texturename"] = visual.getMaterial().getTextureFilename();
+
+                config["materialName"] = visual.getMaterial().getName();
 
                 // FIX: tmpPath
                 std::string tmpPath("");
