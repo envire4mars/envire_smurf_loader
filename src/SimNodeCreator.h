@@ -533,6 +533,10 @@ namespace mars {
 
                 config["materialName"] = visual.getMaterial().getName();
 
+                // remove visual node from general node handling
+                config["noPhysical"] = true;
+                config["noDataPackage"] = true;
+
                 // FIX: tmpPath
                 std::string tmpPath("");
 
