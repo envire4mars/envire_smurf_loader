@@ -489,17 +489,48 @@ namespace mars {
                 // DIRTY FIX: quick fix to load .bobj instead of stl
                 // this will only work if .bobj under the same path as stl
                 // took from simulation/mars/entity_generation/smurf
+                // TODO: check the logic and output of fprintf
                 std::string suffix, tmpfilename;
                 // check if we can use .bobj
                 tmpfilename = trim(config.get("filename", tmpfilename));
                 // if we have an actual file name
                 if (!tmpfilename.empty()) {
                     suffix = mars::utils::getFilenameSuffix(tmpfilename);
-                    if (suffix == ".stl" || suffix == ".STL") {
+                    if (suffix == ".obj" || suffix == ".OBJ" || suffix == ".stl" || suffix == ".STL") {
                         // turn our relative filename into an absolute filename
                         mars::utils::removeFilenameSuffix(&tmpfilename);
                         tmpfilename.append(".bobj");
-                        config["filename"] = tmpfilename;
+                        std::string tmpfilename2 = tmpfilename;
+                        //mars::utils::handleFilenamePrefix(&tmpfilename, tmpPath);
+                        // replace if that file exists
+                        if (mars::utils::pathExists(tmpfilename)) {
+                            std::cout << "Loading .bobj instead of " << suffix << ": " << tmpfilename2 << std::endl;
+                            config["filename"] = tmpfilename2;
+                        }
+                        else {
+                            // check if bobj files are in parallel folder
+                            std::size_t index;
+                            std::string dirname;
+                            if (suffix == ".stl" || suffix == ".STL") {
+                                index = tmpfilename2.find("stl/");
+                                dirname = "stl/";
+                            } else if (tmpfilename2.find("mars_obj/") != std::string::npos) {
+                                index = tmpfilename2.find("mars_obj/");
+                                dirname = "mars_obj/";
+                            } else {
+                                index = tmpfilename2.find("obj/");
+                                dirname = "obj/";
+                            }
+                            if (index != std::string::npos) {
+                                std::string newfilename = mars::utils::replaceString(tmpfilename2, dirname, "bobj/");
+                                // std::string tmpfilename2 = newfilename;
+                                //mars::utils::handleFilenamePrefix(&newfilename, tmpPath);
+                                if (mars::utils::pathExists(newfilename)) {
+                                    std::cout << "Loading .bobj instead of " << suffix << ": " << newfilename << std::endl;
+                                    config["filename"] = newfilename;
+                                }
+                            }
+                        }
                     }
                 }         
 
