@@ -69,7 +69,7 @@ namespace mars {
         CREATE_MODULE_INFO();
 
         // mars::interfaces::PluginInterface (inherited by MarsPluginTemplate) methods     
-        virtual void update(mars::interfaces::sReal time_ms) { std::cout << "update" << std::endl;};
+        virtual void update(mars::interfaces::sReal time_ms) {};
         virtual void reset(void) {};
         virtual void init(void) {};
 
