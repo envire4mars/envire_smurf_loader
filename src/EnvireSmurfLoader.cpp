@@ -80,35 +80,42 @@ namespace mars {
                 theManager->releaseLibrary("mars_entity_factory");
             }
 
-            mars::sim::SimEntity* EnvireSmurfLoader::createEntity(const configmaps::ConfigMap& config) { 
+            std::shared_ptr<mars::sim::SimEntity> EnvireSmurfLoader::createEntity(const configmaps::ConfigMap& config) { 
                 configmaps::ConfigMap entityconfig = config;
                 std::string path = (std::string)entityconfig["path"];
                 std::string file = (std::string)entityconfig["file"];
-                std::string name = (std::string)entityconfig["name"];
+                
+                this->smurf_filename = path + file;            
 
-                this->smurf_filename = path + file;                
+                std::cout << "Loading Entity from file: " << this->smurf_filename << " ..." << std::endl;
 
-                std::cout << "EnvireSmurfLoader::createEntity for " << name << 
-                            " from file: " << this->smurf_filename << std::endl;
+                // load robot model from smurf
+                smurf::Robot* robot = new(smurf::Robot);
+                robot->loadFromSmurf(libConfig::YAMLConfigParser::applyStringVariableInsertions(this->smurf_filename));    
 
+                // recreate robot model in the graph
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);
                 envire::core::Transform iniPose;
                 iniPose.transform.orientation = base::Quaterniond::Identity();
                 iniPose.transform.translation << 0.0, 0.0, 0.3;
-                addRobot(this->smurf_filename, center, iniPose);
+
+                envire::smurf::GraphLoader graphLoader(EnvireStorageManager::instance()->getGraph());
+                graphLoader.loadRobot(nextGroupId, center, iniPose, *robot);
+
+                // create all corresponding sim objects for robot model
                 createSimObjects();
 
-                return 0;
-            };               
+                // create SimEntity for robot model
+                entityconfig["abs_path"] = mars::utils::pathJoin(mars::utils::getCurrentWorkingDir(), path);
+                entityconfig["name"] = robot->getModelName();
+                entityconfig["frame_id"] = robot->getRootFrame()->getName(); 
+
+                return std::make_shared<mars::sim::SimEntity>(control, entityconfig);
+            }               
 
             void EnvireSmurfLoader::addRobot(std::string filename, vertex_descriptor center, envire::core::Transform iniPose)
             {
-                std::string path = libConfig::YAMLConfigParser::applyStringVariableInsertions(filename); 
-                LOG_DEBUG("Robot Path: %s",  path.c_str() );
-                smurf::Robot* robot = new( smurf::Robot);
-                robot->loadFromSmurf(path);
-                envire::smurf::GraphLoader graphLoader(EnvireStorageManager::instance()->getGraph());
-                graphLoader.loadRobot(nextGroupId, center, iniPose, *robot);
+
             }  
 
             void EnvireSmurfLoader::createSimObjects()

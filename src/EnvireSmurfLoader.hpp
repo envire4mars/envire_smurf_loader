@@ -43,6 +43,7 @@
 #include <mars/interfaces/NodeData.h>
 
 #include <mars/sim/SimNode.h>
+#include <mars/sim/SimEntity.h>
 
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/GraphTypes.hpp>
@@ -74,7 +75,7 @@ namespace mars {
         virtual void init(void) {};
 
         // mars::entity_generation::EntityFactoryInterface method
-        virtual mars::sim::SimEntity* createEntity(const configmaps::ConfigMap& config);        
+        virtual std::shared_ptr<mars::sim::SimEntity> createEntity(const configmaps::ConfigMap& config);        
 
       private:
 
