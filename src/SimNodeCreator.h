@@ -534,9 +534,6 @@ namespace mars {
                     }
                 }         
 
-                mars::interfaces::NodeData node;  
-                node.fromConfigMap(&config, "", control->loadCenter);
-
                 // ---- create materials
                 configmaps::ConfigMap material_config;
                 //material_config["id"] = nextMaterialID++;
@@ -568,6 +565,9 @@ namespace mars {
                 config["noPhysical"] = true;
                 config["noDataPackage"] = true;
 
+                mars::interfaces::NodeData node;  
+                node.fromConfigMap(&config, "", control->loadCenter);
+
                 // FIX: tmpPath
                 std::string tmpPath("");
 
@@ -586,6 +586,7 @@ namespace mars {
                     // Z is up)
                     node.visual_offset_rot *= mars::utils::eulerToQuaternion(mars::utils::Vector(-90.0, 0.0, 0.0));
                 }       
+
                 return node;
             }               
         };        
