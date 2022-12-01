@@ -39,7 +39,7 @@
 
 #include <mars/entity_generation/entity_factory/EntityFactoryManager.h>
 
-#include <lib_config/YAMLConfiguration.hpp>
+//#include <lib_config/YAMLConfiguration.hpp>
 // To populate the Graph from the smurf
 #include <envire_smurf/GraphLoader.hpp>
 
@@ -91,7 +91,8 @@ namespace mars {
 
                 // load robot model from smurf
                 smurf::Robot* robot = new(smurf::Robot);
-                robot->loadFromSmurf(libConfig::YAMLConfigParser::applyStringVariableInsertions(this->smurf_filename));    
+                //robot->loadFromSmurf(libConfig::YAMLConfigParser::applyStringVariableInsertions(this->smurf_filename));
+                robot->loadFromSmurf(this->smurf_filename);    
 
                 // recreate robot model in the graph
                 vertex_descriptor center = EnvireStorageManager::instance()->getGraph()->getVertex(SIM_CENTER_FRAME_NAME);

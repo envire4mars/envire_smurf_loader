@@ -19,7 +19,7 @@ pkg_check_modules(PKGCONFIG REQUIRED
           mars_sim
           envire_smurf
           envire_managers
-          lib_config
+          #lib_config
           base-lib
 )
 
