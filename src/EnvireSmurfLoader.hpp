@@ -51,9 +51,13 @@
 
 #include <smurf/Robot.hpp>
 
+#include <mars/plugins/envire_managers/EnvireDefs.hpp>
+
 namespace mars {
   namespace plugins {
     namespace EnvireSmurfLoader {
+
+      using namespace mars::plugins::envire_managers;
 
       // inherit from MarsPluginTemplateGUI for extending the gui
       class EnvireSmurfLoader: public mars::interfaces::MarsPluginTemplate,
@@ -69,19 +73,19 @@ namespace mars {
         virtual const std::string getLibName() const{ return std::string("envire_smurf_loader"); }
         CREATE_MODULE_INFO();
 
-        // mars::interfaces::PluginInterface (inherited by MarsPluginTemplate) methods     
+        // mars::interfaces::PluginInterface (inherited by MarsPluginTemplate) methods
         virtual void update(mars::interfaces::sReal time_ms) {};
         virtual void reset(void) {};
         virtual void init(void) {};
 
         // mars::entity_generation::EntityFactoryInterface method
-        virtual std::shared_ptr<mars::sim::SimEntity> createEntity(const configmaps::ConfigMap& config);        
+        virtual std::shared_ptr<mars::sim::SimEntity> createEntity(const configmaps::ConfigMap& config);
 
       private:
 
         //void addFloor(const envire::core::GraphTraits::vertex_descriptor &center);
 
-        void addRobot(std::string filename,  envire::core::GraphTraits::vertex_descriptor center, envire::core::Transform iniPose);
+        void addRobot(std::string filename,  VertexDesc center, envire::core::Transform iniPose);
 
         int nextGroupId;
 
