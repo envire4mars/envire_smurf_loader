@@ -73,23 +73,23 @@ namespace mars {
             virtual void createInternal(const ItemDataType &item_data, envire::core::FrameId frame_id) = 0;
 
             using Item = envire::core::Item<ItemDataType>;
-            using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;              
+            using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
         public:
             SimJointCreator(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id, std::string type_name)
                 : control(control), origin_frame_id(origin_frame_id), type_name(type_name)
             {}
 
-            void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
+            void create(envire::core::EnvireGraph::vertex_iterator v_itr)
             {
-                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = control->storage->getGraph()->getFrameId(*v_itr);
 
-                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = control->storage->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimJointCreator::create] No " + type_name + " was found").c_str());
                 }
-#endif                 
+#endif
                 ItemItr i_itr;
                 for(i_itr = pair.first; i_itr != pair.second; i_itr++)
                 {
@@ -100,18 +100,18 @@ namespace mars {
 #endif
 
                     createInternal(item_data, frame_id);
-                }    
+                }
             }
 
         protected:
 
             void setAnchor(const ItemDataType &item_data, mars::interfaces::JointData &jointData){
                 envire::core::FrameId target_frame_id = item_data.getTargetFrame().getName();
-                envire::core::Transform target_transf = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, target_frame_id); 
+                envire::core::Transform target_transf = control->storage->getGraph()->getTransform(origin_frame_id, target_frame_id);
                 utils::Vector anchor = target_transf.transform.translation;
                 jointData.anchor = anchor;
                 jointData.anchorPos = mars::interfaces::ANCHOR_NODE2;
-            }  
+            }
 
             std::pair<mars::sim::SimNode*, mars::sim::SimNode*> findSourceTarget(const ItemDataType &item_data)
             {
@@ -131,7 +131,7 @@ namespace mars {
                 }
 #ifdef DEBUG
                 LOG_DEBUG(("[SimJointCreator::findSimNodes] Source SimNode in ***" + source_frame_name + "*** and target SimNode in ***" + target_frame_name + "*** are found").c_str());
-#endif                                 
+#endif
                 return std::pair<mars::sim::SimNode*, mars::sim::SimNode*>(source_sim_node, target_sim_node);
             }
 
@@ -140,17 +140,17 @@ namespace mars {
                 using Iterator = envire::core::EnvireGraph::ItemIterator<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>;
                 Iterator begin, end;
 
-                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>(frame_name);
+                boost::tie(begin, end) = control->storage->getGraph()->getItems<envire::core::Item<std::shared_ptr<mars::sim::SimNode>>>(frame_name);
                 if (begin != end){
                     return begin->getData().get();
                 }
                 return NULL;
-            }                                 
+            }
 
             void createSimJoint(const ItemDataType &item_data, mars::interfaces::JointData &joint_data)
             {
                 // create physical representation
-                mars::sim::JointPhysics* jointPhysics(new mars::sim::JointPhysics(control->sim->getPhysics())); 
+                mars::sim::JointPhysics* jointPhysics(new mars::sim::JointPhysics(control->sim->getPhysics()));
                 std::shared_ptr<mars::interfaces::JointInterface> jointInterfacePtr(jointPhysics);
 
                 std::pair<mars::sim::SimNode*, mars::sim::SimNode*> source_target = findSourceTarget(item_data);
@@ -167,7 +167,7 @@ namespace mars {
 
                     mars::interfaces::NodeId target_id = control->nodes->getID(source_target.second->getName());
                     if (source_id == INVALID_ID)
-                        LOG_ERROR(("[SimJointCreator::createSimJoint] Failed to find NodeIF ***" + source_target.first->getName() + "***").c_str());                    
+                        LOG_ERROR(("[SimJointCreator::createSimJoint] Failed to find NodeIF ***" + source_target.first->getName() + "***").c_str());
 
                     joint_data.nodeIndex1 = source_id;
                     joint_data.nodeIndex2 = target_id;
@@ -182,7 +182,7 @@ namespace mars {
     #endif
                         control->sim->sceneHasChanged(false);//important, otherwise the joint will be ignored by simulation
 
-                        // create SimJoint               
+                        // create SimJoint
                         std::shared_ptr<mars::sim::SimJoint> simJoint(new mars::sim::SimJoint(control, joint_data));
                         simJoint->setPhysicalJoint(jointInterfacePtr);
 
@@ -191,20 +191,20 @@ namespace mars {
                         envire::core::FrameId storage_frame_id = item_data.getSourceFrame().getName();
 
                         SimJointPtrItemPtr simJointPtrItemPtr(new envire::core::Item<std::shared_ptr<mars::sim::SimJoint>>(simJoint));
-                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(storage_frame_id, simJointPtrItemPtr);            
+                        control->storage->getGraph()->addItemToFrame(storage_frame_id, simJointPtrItemPtr);
 
     #ifdef DEBUG
                         LOG_DEBUG("[SimJointCreator::createSimJoint] SimJoint  ***" + joint_data.name + "*** is created");
-    #endif                       
-                        
-                        addToJointRecord(storage_frame_id, joint_data.name, simJoint.get());                           
+    #endif
+
+                        addToJointRecord(storage_frame_id, joint_data.name, simJoint.get());
                     }
                     else
                     {
                         LOG_ERROR("[SimJointCreator::createSimJoint] Failed to create physical joint ***" + joint_data.name + "***");
-                    } */                  
-                }    
-            }             
+                    } */
+                }
+            }
 
             /*void addToJointRecord(const envire::core::FrameId &frameId, const std::string &jointName, mars::sim::SimJoint *simJoint)
             {
@@ -212,7 +212,7 @@ namespace mars {
                 RecordIterator begin, end;
                 // TODO Ask Arne, why to getItems I have to provide the template Item?
                 // won't getItems only look for Items?
-                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<envire::core::Item<mars::sim::JointRecord>>(frameId);
+                boost::tie(begin, end) = control->storage->getGraph()->getItems<envire::core::Item<mars::sim::JointRecord>>(frameId);
                 bool stored=false;
                 while((!stored)&&(begin!=end))
                 {
@@ -221,13 +221,13 @@ namespace mars {
                     {
      #ifdef DEBUG
                         LOG_DEBUG("[SimJointCreator::addToJointRecord] Store SimJoint and JointInterface into JointRecord");
-    #endif                                              
+    #endif
                         record->sim = std::shared_ptr<mars::sim::SimJoint>(simJoint);
                     }
                     begin ++;
                 }
 
-            }*/           
+            }*/
         };
 
         class SimJointCreatorJoint: public SimJointCreator<smurf::Joint>
@@ -235,7 +235,7 @@ namespace mars {
         public:
             SimJointCreatorJoint(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimJointCreator(control, origin_frame_id, std::string("smurf::Joint"))
-            {}            
+            {}
 
         private:
             /**
@@ -250,11 +250,11 @@ namespace mars {
                 mars::sim::JointRecord* joint_info(new mars::sim::JointRecord);
                 joint_info->name = joint.getName();
                 envire::core::Item<mars::sim::JointRecord>::Ptr jointItemPtr(new envire::core::Item<mars::sim::JointRecord>(*joint_info));
-                EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, jointItemPtr);                   
+                control->storage->getGraph()->addItemToFrame(frame_id, jointItemPtr);
 
 #ifdef DEBUG
                 LOG_DEBUG(("[EnvireSmurfLoader::createInternal] The JointRecord is created for ***" + joint.getName() + "***").c_str());
-#endif                  */      
+#endif                  */
 
                 // create Joint
                 mars::interfaces::JointData joint_data;
@@ -263,7 +263,7 @@ namespace mars {
                 // set Axis 1
                 envire::core::FrameId target_frame_id = joint.getTargetFrame().getName();
                 // get transformation from source to target
-                envire::core::Transform target_transf = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, target_frame_id); 
+                envire::core::Transform target_transf = control->storage->getGraph()->getTransform(origin_frame_id, target_frame_id);
                 Eigen::Affine3d axis_transf = target_transf.transform.orientation * joint.getSourceToAxis().inverse();
                 joint_data.axis1 = axis_transf.translation();
 
@@ -275,7 +275,7 @@ namespace mars {
                 joint_data.lowStopAxis1 = position_limits.first;
                 joint_data.highStopAxis1 = position_limits.second;
 
-                // DIRTY FIX!!! 
+                // DIRTY FIX!!!
                 // if the joints has spring (dynamic), than set the parameter in simulation
                 if (joint.hasSpring())
                 {
@@ -284,13 +284,13 @@ namespace mars {
                     joint_data.spring_const_constraint_axis1 = spring_param.spring_const_constraint_axis1;
                     joint_data.damping_constant = spring_param.springDamping;
                     joint_data.spring_constant = spring_param.springStiffness;
-                }        
+                }
 
                 // create Sim Joint
                 createSimJoint(joint, joint_data);
 
                 //jointData->print();
-            }    
+            }
 
             mars::interfaces::JointType getJointType(const smurf::Joint &joint) {
                 urdf::JointSharedPtr joint_model = joint.getJointModel();
@@ -316,26 +316,26 @@ namespace mars {
                   case urdf::Joint::CONTINUOUS:
                   {
                     // We have some
-                    log_type = "Continuous"; 
+                    log_type = "Continuous";
                     joint_type = mars::interfaces::JOINT_TYPE_HINGE;
                     break;
                   }
                   case urdf::Joint::PRISMATIC:
                   {
-                    log_type = "Prismatic"; 
+                    log_type = "Prismatic";
                     joint_type = mars::interfaces::JOINT_TYPE_SLIDER;
                     break;
                   }
                   case urdf::Joint::REVOLUTE:
                   {
                     // We have some
-                    log_type = "Revolute"; 
+                    log_type = "Revolute";
                     joint_type = mars::interfaces::JOINT_TYPE_HINGE;
                     break;
                   }
                   case urdf::Joint::PLANAR:
                   {
-                    log_type = "Planar"; 
+                    log_type = "Planar";
                     // TODO No support? Set fixed
                     joint_type = mars::interfaces::JOINT_TYPE_FIXED;
                     break;
@@ -343,16 +343,16 @@ namespace mars {
                   case urdf::Joint::UNKNOWN:
                   default:
                   {
-                    log_type = "Unknown"; 
+                    log_type = "Unknown";
                     joint_type = mars::interfaces::JOINT_TYPE_FIXED;
                     break;
                   }
                 }
 #ifdef DEBUG
-                LOG_DEBUG(("[SimJointCreatorJoint::getJointType] The joint type is: " + log_type).c_str()); 
+                LOG_DEBUG(("[SimJointCreatorJoint::getJointType] The joint type is: " + log_type).c_str());
 #endif
                 return joint_type;
-            }                      
+            }
         };
 
         class SimJointCreatorStaticTranf: public SimJointCreator<smurf::StaticTransformation>
@@ -360,12 +360,12 @@ namespace mars {
         public:
             SimJointCreatorStaticTranf(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimJointCreator(control, origin_frame_id, std::string("smurf::StaticTransformation"))
-            {}            
+            {}
 
         private:
             /**
             *   set anchor
-            */            
+            */
             virtual void createInternal(const smurf::StaticTransformation &static_transf, envire::core::FrameId frame_id)
             {
                                 // create Joint
@@ -374,15 +374,15 @@ namespace mars {
                 joint_data.init(static_transf.getName(), mars::interfaces::JOINT_TYPE_FIXED);
 
 #ifdef DEBUG
-                LOG_DEBUG("[SimJointCreatorJoint::createInternal] The joint type is: Fixed"); 
-#endif                
+                LOG_DEBUG("[SimJointCreatorJoint::createInternal] The joint type is: Fixed");
+#endif
 
                 // set Anchor
-                setAnchor(static_transf, joint_data);              
+                setAnchor(static_transf, joint_data);
 
                 createSimJoint(static_transf, joint_data);
-            }           
-        };        
+            }
+        };
 
 
     } // end of namespace EnvireSmurfLoader

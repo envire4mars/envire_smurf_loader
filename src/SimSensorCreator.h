@@ -64,7 +64,7 @@ namespace mars {
 
         using namespace mars::plugins::envire_managers;
 
-        class SimSensorCreator 
+        class SimSensorCreator
         {
         protected:
             mars::interfaces::ControlCenter *control;
@@ -76,19 +76,19 @@ namespace mars {
                 : control(control), origin_frame_id(origin_frame_id), type_name("smurf::Sensor")
             {}
 
-            void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
+            void create(envire::core::EnvireGraph::vertex_iterator v_itr)
             {
-                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = control->storage->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<smurf::Sensor>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = control->storage->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimSensorCreator::create] No " + type_name + " was found").c_str());
                 }
-#endif                 
+#endif
                 ItemItr i_itr;
                 for(i_itr = pair.first; i_itr != pair.second; i_itr++)
                 {
@@ -108,15 +108,15 @@ namespace mars {
                         std::shared_ptr<mars::interfaces::BaseSensor> sensor(createSensor(item_data, frame_id));
 
                         SensorItemPtr sensorItem(new envire::core::Item<std::shared_ptr<mars::interfaces::BaseSensor>>(sensor));
-                        EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, sensorItem);
-                        
+                        control->storage->getGraph()->addItemToFrame(frame_id, sensorItem);
+
 #ifdef DEBUG
                         LOG_DEBUG("[SimSensorCreator::create] Base sensor instantiated and added to the graph.");
 #endif
 
                         bool attached = attachSensor(sensor.get(), frame_id);
                         if (!attached)
-                        {              
+                        {
                             LOG_ERROR(("[SimSensorCreator::create] Could not find node interface to which to attach the sensor *" + item_data.getName() + "*.").c_str());
                         } else {
                             LOG_DEBUG(("[SimSensorCreator::create] *" + item_data.getType() + "* *" + item_data.getName() + "* is attached (frame: " + frame_id + ")").c_str());
@@ -124,7 +124,7 @@ namespace mars {
                     } else {
                         LOG_ERROR(("[SimSensorCreator::create] " + type_name + " UnknownType (" + item_data.getType() + ")  ***" + item_data.getName() + "*** was found. Since the type is unknown, it was not added into the graph." ).c_str());
                     }
-                }         
+                }
             }
 
             mars::interfaces::BaseSensor* createSensor(const smurf::Sensor &sensorSmurf, const envire::core::FrameId frameId)
@@ -136,9 +136,9 @@ namespace mars {
                 // TODO: check if we can get jointID over graph back by using frameid
                 sensorMap["jointID"] = control->joints->getID(sensorSmurf.getJointName());
                 sensorMap["frame"] = frameId;
-                mars::interfaces::BaseSensor* sensor = control->sensors->createAndAddSensor(&sensorMap); 
+                mars::interfaces::BaseSensor* sensor = control->sensors->createAndAddSensor(&sensorMap);
                 return sensor;
-            }   
+            }
 
             bool attachSensor(mars::interfaces::BaseSensor* sensor, const envire::core::FrameId frameId)
             {
@@ -147,18 +147,18 @@ namespace mars {
                 bool attached = false;
                 std::shared_ptr<mars::sim::SimNode> simNodePtr;
                 Iterator begin, end;
-                boost::tie(begin, end) = EnvireStorageManager::instance()->getGraph()->getItems<SimNodeItem>(frameId);
+                boost::tie(begin, end) = control->storage->getGraph()->getItems<SimNodeItem>(frameId);
                 if (begin != end)
                 {
                     simNodePtr = begin->getData();
                     simNodePtr->addSensor(sensor);
                     attached = true;
 #ifdef DEBUG
-                    LOG_DEBUG(("[SimSensorCreator::attachSensor] The SimNode ***" + simNodePtr->getName() + "*** to attach the sensor is found").c_str()); 
+                    LOG_DEBUG(("[SimSensorCreator::attachSensor] The SimNode ***" + simNodePtr->getName() + "*** to attach the sensor is found").c_str());
 #endif
                 }
                 return attached;
-            }                     
+            }
         };
 
     } // end of namespace EnvireSmurfLoader

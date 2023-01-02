@@ -71,7 +71,7 @@ namespace mars {
         using namespace mars::plugins::envire_managers;
 
         template <class ItemDataType>
-        class SimNodeCreator 
+        class SimNodeCreator
         {
         protected:
             mars::interfaces::ControlCenter *control;
@@ -90,20 +90,20 @@ namespace mars {
             void poseToVectorAndQuaternion(const urdf::Pose &pose, mars::utils::Vector *v, mars::utils::Quaternion*q) {
                 *v = mars::utils::Vector(pose.position.x, pose.position.y, pose.position.z);
                 *q = mars::utils::quaternionFromMembers(pose.rotation); //Quaternion(pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w);
-            }     
+            }
 
             void addEmptyVisualToNode(configmaps::ConfigMap *map) {
                 (*map)["origname"] = "";
                 (*map)["materialName"] = material_empty_visual.name;
                 (*map)["visualType"] = "empty";
-            }       
+            }
 
             void addEmptyCollisionToNode(configmaps::ConfigMap *map) {
                 mars::utils::Vector size(0.01, 0.01, 0.01);
                 (*map)["physicmode"] = "box";
                 (*map)["coll_bitmask"] = 0;
                 mars::utils::vectorToConfigItem(&(*map)["extend"], &size);
-            }            
+            }
 
         public:
             SimNodeCreator(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id, std::string type_name)
@@ -120,7 +120,7 @@ namespace mars {
                 material_origin.exists = true;
                 material_origin.diffuseFront = mars::utils::Color(0.0, 0.0, 1.0, 1.0);
                 material_origin.texturename = "";
-                material_origin.cullMask = 0;      
+                material_origin.cullMask = 0;
             }
 
             void setFilenamePath(std::string filename_path)
@@ -128,19 +128,19 @@ namespace mars {
                 this->filename_path = filename_path;
             }
 
-            void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
+            void create(envire::core::EnvireGraph::vertex_iterator v_itr)
             {
-                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = control->storage->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<ItemDataType>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = control->storage->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimNodeCreator::create] No " + type_name + " was found").c_str());
                 }
-#endif                 
+#endif
                 ItemItr i_itr;
                 for(i_itr = pair.first; i_itr != pair.second; i_itr++)
                 {
@@ -158,13 +158,13 @@ namespace mars {
                     setPose(node_data, frame_id);
 
                     // create SimNode with NodeData
-                    //createSimNode(node_data, frame_id, item_data.getName()); 
+                    //createSimNode(node_data, frame_id, item_data.getName());
                     control->nodes->addNode(&node_data);
-                }         
+                }
             }
 
         private:
-            void createSimNode(mars::interfaces::NodeData &node_data, envire::core::FrameId frame_id, std::string name) 
+            void createSimNode(mars::interfaces::NodeData &node_data, envire::core::FrameId frame_id, std::string name)
             {
                 // create NodePhysik
                 std::shared_ptr<mars::interfaces::NodeInterface> node_physics = mars::sim::PhysicsMapper::newNodePhysics(control->sim->getPhysics());
@@ -179,9 +179,9 @@ namespace mars {
                 //}
 
                 // create SimNode and add it into the graph
-                if (instantiated) {                           
+                if (instantiated) {
                     //NOTE Create and store also a simNode. The simNode interface is set to the physics node
-                    mars::sim::SimNode *simNode = new mars::sim::SimNode(control, node_data); 
+                    mars::sim::SimNode *simNode = new mars::sim::SimNode(control, node_data);
                     simNode->setInterface(node_physics);
                     std::shared_ptr<mars::sim::SimNode> simNodePtr(simNode);
 
@@ -190,18 +190,18 @@ namespace mars {
                     using SimNodeItemPtr = envire::core::Item<std::shared_ptr<mars::sim::SimNode>>::Ptr;
                     using SimNodeItem =  envire::core::Item<std::shared_ptr<mars::sim::SimNode>>;
 
-                    SimNodeItemPtr simNodeItem( new SimNodeItem(simNodePtr));        
-                    EnvireStorageManager::instance()->getGraph()->addItemToFrame(frame_id, simNodeItem);
+                    SimNodeItemPtr simNodeItem( new SimNodeItem(simNodePtr));
+                    control->storage->getGraph()->addItemToFrame(frame_id, simNodeItem);
 
                     simNodeItem->getData()->getInterface();
 #ifdef DEBUG
                     LOG_DEBUG(("[SimNodeCreator::createSimNode] The SimNode ***" + simNode->getName() + "*** is created for ***" + name + "***").c_str());
-#endif                   
+#endif
 
 
                 } else {
                     LOG_ERROR(("[SimNodeCreator::createSimNode] Failed to create SimNode for ***" + name + "***").c_str());
-                }                  
+                }
             }
 
             void setPose(mars::interfaces::NodeData& node_data, envire::core::FrameId frame_id)
@@ -210,13 +210,13 @@ namespace mars {
                 if(origin_frame_id.compare(frame_id) == 0)
                 {
                     //this special case happens when the graph only contains one frame
-                    //and items are added to that frame. In that case asking the graph 
+                    //and items are added to that frame. In that case asking the graph
                     //for the transformation would cause an exception
                     fromOrigin.setTransform(base::TransformWithCovariance::Identity());
                 }
                 else
                 {
-                    fromOrigin = EnvireStorageManager::instance()->getGraph()->getTransform(origin_frame_id, frame_id); 
+                    fromOrigin = control->storage->getGraph()->getTransform(origin_frame_id, frame_id);
                 }
                 node_data.pos = fromOrigin.transform.translation;
                 node_data.rot = fromOrigin.transform.orientation;
@@ -228,7 +228,7 @@ namespace mars {
         public:
             SimNodeCreatorFrame(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimNodeCreator(control, origin_frame_id, std::string("smurf::Frame"))
-            {}            
+            {}
 
         private:
             virtual mars::interfaces::NodeData createNodeData(const smurf::Frame &frame)
@@ -242,24 +242,24 @@ namespace mars {
                 mars::interfaces::NodeData node;
                 node.init(frame.getName());
                 //mass is zero because it doesnt matter for visual representation
-                node.initPrimitive(mars::interfaces::NODE_TYPE_SPHERE, extents, 0.00001); 
+                node.initPrimitive(mars::interfaces::NODE_TYPE_SPHERE, extents, 0.00001);
                 //node.material.emissionFront = mars::utils::Color(1.0, 0.0, 0.0, 1.0);
                 node.material = material_empty_visual;
                 node.c_params.coll_bitmask = 0;
                 node.movable = true;
                 node.groupID = frame.getGroupId();
-                node.density = 0.0;      
-       
+                node.density = 0.0;
+
                 // TODO: this should be replace by addEmptyVisualToNode(NodeData &node)
                 node.material = material_empty_visual;
                 node.map["origname"] = "";
                 node.map["materialName"] = material_empty_visual.name;
-                node.map["visualType"] = "empty";    
+                node.map["visualType"] = "empty";
 
-                node.simNodeType = mars::interfaces::SimNodeType::FRAME;                       
-                
-                return node; 
-            }            
+                node.simNodeType = mars::interfaces::SimNodeType::FRAME;
+
+                return node;
+            }
         };
 
         class SimNodeCreatorCollidable: public SimNodeCreator<smurf::Collidable>
@@ -267,12 +267,12 @@ namespace mars {
         public:
             SimNodeCreatorCollidable(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimNodeCreator(control, origin_frame_id, std::string("smurf::Collidable"))
-            {}            
+            {}
 
-        private:         
+        private:
             virtual mars::interfaces::NodeData createNodeData(const smurf::Collidable &collidable)
             {
-                urdf::Collision collision = collidable.getCollision(); 
+                urdf::Collision collision = collidable.getCollision();
 
                 configmaps::ConfigMap config;
                 std::string name;
@@ -285,7 +285,7 @@ namespace mars {
                 // init node
                 config["name"] = name;
                 //config["index"] = nextNodeID++;
-                config["groupid"] = collidable.getGroupId(); 
+                config["groupid"] = collidable.getGroupId();
                 config["movable"] = true ;//config["movable"] = !fixed;
                 //config["relativeid"] = currentNodeID;
                 config["mass"] = 0.001;
@@ -336,15 +336,15 @@ namespace mars {
                 mars::utils::vectorToConfigItem(&config["position"][0], &v);
                 mars::utils::quaternionToConfigItem(&config["rotation"][0], &q);
 
-                addEmptyVisualToNode(&config); 
+                addEmptyVisualToNode(&config);
 
-                mars::interfaces::NodeData node;  
+                mars::interfaces::NodeData node;
                 node.fromConfigMap(&config, "", control->loadCenter);
                 node.simNodeType = mars::interfaces::SimNodeType::COLLISION;
                 node.material = material_empty_visual;
-                
-                return node; 
-            }      
+
+                return node;
+            }
         };
 
         class SimNodeCreatorInertial: public SimNodeCreator<smurf::Inertial>
@@ -352,7 +352,7 @@ namespace mars {
         public:
             SimNodeCreatorInertial(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimNodeCreator(control, origin_frame_id, std::string("smurf::Inertial"))
-            {}    
+            {}
 
         private:
             virtual mars::interfaces::NodeData createNodeData(const smurf::Inertial &inertial)
@@ -400,16 +400,16 @@ namespace mars {
 
                 // complete node
                 //addEmptyVisualToNode(&config);
-                addEmptyVisualToNode(&config); 
-                addEmptyCollisionToNode(&config);            
+                addEmptyVisualToNode(&config);
+                addEmptyCollisionToNode(&config);
 
-                mars::interfaces::NodeData node;  
+                mars::interfaces::NodeData node;
                 node.fromConfigMap(&config, "", control->loadCenter);
-                node.simNodeType = mars::interfaces::SimNodeType::INERTIA;                
+                node.simNodeType = mars::interfaces::SimNodeType::INERTIA;
                 node.material = material_empty_visual;
-                
-                return node; 
-            }               
+
+                return node;
+            }
         };
 
         class SimNodeCreatorVisual: public SimNodeCreator<smurf::Visual>
@@ -417,7 +417,7 @@ namespace mars {
         public:
             SimNodeCreatorVisual(mars::interfaces::ControlCenter *control, envire::core::FrameId origin_frame_id)
                 : SimNodeCreator(control, origin_frame_id, std::string("smurf::Visual"))
-            {}    
+            {}
 
         private:
 
@@ -532,7 +532,7 @@ namespace mars {
                             }
                         }
                     }
-                }         
+                }
 
                 // ---- create materials
                 configmaps::ConfigMap material_config;
@@ -553,9 +553,9 @@ namespace mars {
                 material_config["specularColor"]["a"] = (double) visual.getMaterial().getSpecularColor().a;
                 material_config["specularColor"]["r"] = (double) visual.getMaterial().getSpecularColor().r;
                 material_config["specularColor"]["g"] = (double) visual.getMaterial().getSpecularColor().g;
-                material_config["specularColor"]["b"] = (double) visual.getMaterial().getSpecularColor().b;         
+                material_config["specularColor"]["b"] = (double) visual.getMaterial().getSpecularColor().b;
 
-                material_config["shininess"] = (double) visual.getMaterial().getShininess();       
+                material_config["shininess"] = (double) visual.getMaterial().getShininess();
 
                 material_config["texturename"] = visual.getMaterial().getTextureFilename();
 
@@ -565,7 +565,7 @@ namespace mars {
                 config["noPhysical"] = true;
                 config["noDataPackage"] = true;
 
-                mars::interfaces::NodeData node;  
+                mars::interfaces::NodeData node;
                 node.fromConfigMap(&config, "", control->loadCenter);
 
                 // FIX: tmpPath
@@ -574,7 +574,7 @@ namespace mars {
                 mars::interfaces::MaterialData material;
                 int valid = material.fromConfigMap(&material_config, tmpPath);
                 node.material = material;
-                node.simNodeType = mars::interfaces::SimNodeType::VISUAL;  
+                node.simNodeType = mars::interfaces::SimNodeType::VISUAL;
 
                 // took from simulation/mars/entity_generation/smurf
                 // check if meshes are stored as `.stl` file
@@ -585,11 +585,11 @@ namespace mars {
                     // of which direction is up within .stl (for .stl -Y is up and in MARS
                     // Z is up)
                     node.visual_offset_rot *= mars::utils::eulerToQuaternion(mars::utils::Vector(-90.0, 0.0, 0.0));
-                }       
+                }
 
                 return node;
-            }               
-        };        
+            }
+        };
 
     } // end of namespace EnvireSmurfLoader
   } // end of namespace plugins
