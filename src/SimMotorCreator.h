@@ -62,7 +62,7 @@ namespace mars {
 
         using namespace mars::plugins::envire_managers;
 
-        class SimMotorCreator 
+        class SimMotorCreator
         {
         protected:
             mars::interfaces::ControlCenter *control;
@@ -74,19 +74,19 @@ namespace mars {
                 : control(control), origin_frame_id(origin_frame_id), type_name("smurf::Motor")
             {}
 
-            void create(envire::core::EnvireGraph::vertex_iterator v_itr) 
+            void create(envire::core::EnvireGraph::vertex_iterator v_itr)
             {
-                envire::core::FrameId frame_id = EnvireStorageManager::instance()->getGraph()->getFrameId(*v_itr);
+                envire::core::FrameId frame_id = control->storage->getGraph()->getFrameId(*v_itr);
 
                 using Item = envire::core::Item<smurf::Motor>;
                 using ItemItr = envire::core::EnvireGraph::ItemIterator<Item>;
 
-                const std::pair<ItemItr, ItemItr> pair = EnvireStorageManager::instance()->getGraph()->getItems<Item>(*v_itr);
+                const std::pair<ItemItr, ItemItr> pair = control->storage->getGraph()->getItems<Item>(*v_itr);
 #ifdef DEBUG
                 if (pair.first == pair.second) {
                     LOG_DEBUG(("[SimMotorCreator::create] No " + type_name + " was found").c_str());
                 }
-#endif                 
+#endif
                 ItemItr i_itr;
                 for(i_itr = pair.first; i_itr != pair.second; i_itr++)
                 {
@@ -96,7 +96,7 @@ namespace mars {
                     LOG_DEBUG(("[SimMotorCreator::create] " + type_name + " ***" + item_data.getName() + "*** was found" ).c_str());
 #endif
 
-                    configmaps::ConfigMap motorMap = item_data.getMotorMap();    
+                    configmaps::ConfigMap motorMap = item_data.getMotorMap();
                     //motorMap["mapIndex"].push_back(configmaps::ConfigItem(motorIndex)); // Maybe we don't need this
                     mars::interfaces::MotorData motor_data;
                     std::string prefix = "";
@@ -115,9 +115,9 @@ namespace mars {
                     else{
 #ifdef DEBUG
                         LOG_DEBUG("[SimMotorCreator::create] New Motor was added into simulation");
-#endif   
+#endif
                     }
-                }         
+                }
             }
         };
 
